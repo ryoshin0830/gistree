@@ -17,7 +17,7 @@ function gistJson(files, names = files.map(([n]) => n)) {
         `<div class="gist-file"><div class="gist-data"><div class="js-gist-file-update-container js-task-list-container"><div id="${slug(name)}" class="file my-2">${body}</div></div></div></div>`,
     )
     .join('');
-  return { description: '', public: true, files: names, owner: 'alice', div: `<div id="gist1" class="gist">${div}</div>`, stylesheet: '' };
+  return { files: names, div: `<div id="gist1" class="gist">${div}</div>` };
 }
 
 module.exports = { md, code, gistJson };

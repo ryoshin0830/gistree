@@ -8,7 +8,7 @@ const fixture = (name) => read('fixtures', name);
 
 // fetchMap: { '/alice/abc.json': { body, status = 200, wait } }; body is a string or JSON-able value,
 // wait an optional promise that holds the response back. Unknown URLs answer 404.
-function load({ url, html, fetchMap = {}, wide = true, before }) {
+function load({ url, html, fetchMap = {}, wide = true }) {
   const dom = new JSDOM(html, { url, runScripts: 'outside-only', pretendToBeVisual: true });
   const w = dom.window;
   w.fetched = [];
@@ -34,7 +34,6 @@ function load({ url, html, fetchMap = {}, wide = true, before }) {
     disconnect() {}
   };
   w.matchMedia = (media) => ({ media, matches: wide, addEventListener() {}, removeEventListener() {} });
-  before?.(w);
   // One eval, like content scripts sharing one global scope (separate evals would hide top-level consts).
   w.eval(read('..', 'src', 'lib.js') + '\n' + read('..', 'src', 'content.js'));
   w.go = (href) => w.went.push(href); // navigation is not implemented in jsdom
