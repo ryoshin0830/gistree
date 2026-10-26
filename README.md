@@ -2,7 +2,8 @@
 
 A Chrome extension that shows every file of a GitHub Gist.
 
-- **Gist lists** (your gists, starred, discover, search): each gist becomes a two-column card, with all file names on the left and a preview on the right. The preview is `README.md` if the gist has one, otherwise another Markdown file, otherwise a `.txt` file, otherwise the first file.
+- **Gist lists** (your gists, starred, discover, search): a compact index. Each gist shows its description as the title, a Secret label, when it changed, and every file name. A preview opens on demand: `README.md` if the gist has one, otherwise another Markdown file, otherwise a `.txt` file, otherwise the first file. All pages of a profile are merged into one list (up to 100 gists).
+- **Filter and search**: type to filter by title, description or file name. Press Enter to search file contents with GitHub's gist search, scoped to that user. Your own secret gists are included while you are signed in.
 - **Gist pages**: a sticky file sidebar with a filter box that highlights the file you are reading. You can hide it, and it stays hidden after a reload.
 
 No token, no API key, no permissions. gistree reads the same gist pages your browser already shows, so your secret gists work while you are signed in.

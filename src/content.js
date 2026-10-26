@@ -1,8 +1,14 @@
 // GitHub DOM selectors live here and nowhere else: when gist.github.com changes, fix this block.
 const SEL = {
   snippet: '.gist-snippet',
-  snippetBody: '.js-gist-file-update-container',
   gistLink: '.gist-snippet-meta a[href]',
+  title: '.gist-snippet-meta a[href] strong',
+  description: '.gist-snippet-meta span.f6',
+  time: '.gist-snippet-meta relative-time',
+  label: '.gist-snippet-meta .Label',
+  pager: '.paginate-container',
+  pagerLink: '.pagination a',
+  snippetBody: '.js-gist-file-update-container',
   file: 'div.file[id^="file-"]',
   pageFile: '.gist-content div.file[id^="file-"]',
   fileName: '.gist-blob-name',
@@ -11,12 +17,32 @@ const SEL = {
   codeLine: '.blob-code-inner',
 };
 const MAX_PARALLEL = 3;
+const MAX_PAGES = 10; // ponytail: 100 gists merged; past that a "more" link goes on to GitHub's pages
 const PREVIEW_LINES = 12;
 
 function el(tag, props = {}, ...children) {
   const node = Object.assign(document.createElement(tag), props);
   node.append(...children.filter(Boolean));
   return node;
+}
+
+async function fetchDoc(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`${res.status} ${url}`);
+  return new DOMParser().parseFromString(await res.text(), 'text/html');
+}
+
+// Runs jobs with at most MAX_PARALLEL fetches in flight; a failing job is skipped.
+function pool() {
+  const queue = [];
+  let running = 0;
+  const next = () => {
+    if (running >= MAX_PARALLEL || !queue.length) return;
+    running++;
+    queue.shift()().catch((e) => console.debug('[gistree]', e)).finally(() => (running--, next()));
+    next();
+  };
+  return (job) => (queue.push(job), next());
 }
 
 // Files in GitHub's display order. Works on the live page and on fetched documents.
@@ -38,41 +64,165 @@ function preview(file) {
   return lines.length ? el('pre', { textContent: lines.join('\n') }) : null;
 }
 
-async function enhanceSnippet(snippet) {
-  const link = [...snippet.querySelectorAll(SEL.gistLink)].find((a) => /^\/[^/]+\/[0-9a-f]+$/.test(a.pathname));
-  const body = snippet.querySelector(SEL.snippetBody);
-  if (!link || !body) return;
-  const res = await fetch(link.pathname);
-  if (!res.ok) return;
-  const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
-  const files = readFiles(doc);
-  if (files.length < 2) return;
+// ---- Gist lists: one compact, searchable index instead of GitHub's long snippets ----
 
-  const chosen = files[gistree.pickPreview(files.map((f) => f.name))];
-  const list = el('ul', { className: 'gistree-files' });
-  for (const f of files) {
-    const a = fileLink(f, `${link.pathname}#${f.id}`);
-    if (f === chosen) a.classList.add('gistree-active');
-    list.append(el('li', {}, a));
-  }
-  // No previewable text (images, notebooks…): keep GitHub's own preview below the file list.
-  const shown = preview(chosen);
-  const card = el('div', { className: 'gistree-card' }, list, shown && el('div', { className: 'gistree-preview' }, shown));
-  body.hidden = Boolean(shown);
-  body.before(card);
-}
-
-async function enhanceList() {
-  const queue = [...document.querySelectorAll(SEL.snippet)].filter((s) => !s.dataset.gistree);
-  queue.forEach((s) => (s.dataset.gistree = '1'));
-  const worker = async () => {
-    for (let s; (s = queue.shift()); ) {
-      // Any failure leaves GitHub's original snippet untouched.
-      await enhanceSnippet(s).catch((e) => console.debug('[gistree]', e));
-    }
+function readSnippet(snippet) {
+  const link = [...snippet.querySelectorAll(SEL.gistLink)].find((a) => /^\/[^/]+\/[0-9a-f]+$/.test(a.getAttribute('href')));
+  if (!link) return null;
+  const path = link.getAttribute('href');
+  const time = snippet.querySelector(SEL.time);
+  return {
+    path,
+    owner: path.split('/')[1],
+    title: snippet.querySelector(SEL.title)?.textContent.trim() ?? path,
+    description: snippet.querySelector(SEL.description)?.textContent.trim() ?? '',
+    secret: [...snippet.querySelectorAll(SEL.label)].some((l) => l.textContent.trim() === 'Secret'),
+    time: time && document.importNode(time, true),
+    stamp: time?.getAttribute('datetime') ?? '',
   };
-  await Promise.all(Array.from({ length: MAX_PARALLEL }, worker));
 }
+
+// File names cost a full gist page fetch, so remember them until the gist changes.
+const cache = {
+  get(gist) {
+    try {
+      const hit = JSON.parse(localStorage.getItem(`gistree:files:${gist.path}`));
+      return hit?.stamp === gist.stamp ? hit.files : null;
+    } catch {
+      return null;
+    }
+  },
+  set(gist, files) {
+    try {
+      localStorage.setItem(`gistree:files:${gist.path}`, JSON.stringify({ stamp: gist.stamp, files }));
+    } catch {}
+  },
+};
+
+function row(gist, owner) {
+  const chips = el('div', { className: 'gistree-chips' }, el('span', { className: 'gistree-muted', textContent: 'Loading files…' }));
+  const body = el('div', { className: 'gistree-preview' });
+  const details = el('details', {}, el('summary', { textContent: 'Preview' }), body);
+  const meta = el('div', { className: 'gistree-meta' }, gist.owner !== owner && `${gist.owner} · `, gist.time);
+  const head = el(
+    'div',
+    { className: 'gistree-head' },
+    el('a', { className: 'gistree-title', href: gist.path, textContent: gist.description || gist.title }),
+    gist.secret && el('span', { className: 'Label Label--secondary', textContent: 'Secret' }),
+  );
+  const li = el('li', { className: 'gistree-row' }, head, meta, chips, details);
+  li.gist = gist;
+  li.searchText = `${gist.title} ${gist.description}`.toLowerCase();
+
+  li.showFiles = (files) => {
+    const chosen = gistree.pickPreview(files.map((f) => f.name));
+    chips.replaceChildren(
+      ...files.map((f, i) => {
+        const a = el('a', { href: `${gist.path}#${f.id}`, title: f.name, textContent: gistree.truncateMiddle(f.name, 40) });
+        if (i === chosen) a.classList.add('gistree-active');
+        return a;
+      }),
+    );
+    li.searchText += ' ' + files.map((f) => f.name).join(' ').toLowerCase();
+    li.filesLoaded = true;
+  };
+
+  details.addEventListener('toggle', () => {
+    if (!details.open || body.childElementCount) return;
+    body.textContent = 'Loading…';
+    fetchDoc(gist.path)
+      .then((doc) => {
+        const files = readFiles(doc);
+        if (!li.filesLoaded) li.showFiles(files.map(({ id, name }) => ({ id, name })));
+        const shown = files.length && preview(files[gistree.pickPreview(files.map((f) => f.name))]);
+        body.replaceChildren(shown || el('span', { className: 'gistree-muted', textContent: 'No text preview for this file.' }));
+      })
+      .catch(() => (body.textContent = 'Could not load this gist.'));
+  });
+  return li;
+}
+
+async function morePages(doc, makeRow, list) {
+  for (let page = 1; page < MAX_PAGES; page++) {
+    const older = [...doc.querySelectorAll(SEL.pagerLink)].find((a) => a.textContent.trim() === 'Older');
+    if (!older) return null;
+    doc = await fetchDoc(older.href);
+    for (const s of doc.querySelectorAll(SEL.snippet)) {
+      const gist = readSnippet(s);
+      if (gist) list.append(makeRow(gist));
+    }
+  }
+  return [...doc.querySelectorAll(SEL.pagerLink)].find((a) => a.textContent.trim() === 'Older')?.href ?? null;
+}
+
+function enhanceList() {
+  const snippets = [...document.querySelectorAll(SEL.snippet)];
+  const gists = snippets.map(readSnippet);
+  if (!gists.length || gists.includes(null) || document.querySelector('.gistree-index')) return;
+
+  const owner = gistree.profileOwner(location.pathname);
+  const load = pool();
+  const fetchFiles = (li) => {
+    if (li.filesLoaded || li.queued) return;
+    li.queued = true;
+    load(async () => {
+      const files = readFiles(await fetchDoc(li.gist.path)).map(({ id, name }) => ({ id, name }));
+      cache.set(li.gist, files);
+      li.showFiles(files);
+      filterRows();
+    });
+  };
+  const seen = new IntersectionObserver((entries) => entries.forEach((e) => e.isIntersecting && (seen.unobserve(e.target), fetchFiles(e.target))), { rootMargin: '200px' });
+  const makeRow = (gist) => {
+    const li = row(gist, owner);
+    const cached = cache.get(gist);
+    if (cached) li.showFiles(cached);
+    else seen.observe(li);
+    return li;
+  };
+
+  const list = el('ul', { className: 'gistree-list' }, ...gists.map(makeRow));
+  const count = el('span', { className: 'gistree-muted' });
+  const input = el('input', {
+    type: 'search',
+    className: 'form-control',
+    placeholder: owner ? `Filter ${owner}'s gists — Enter searches file contents, secret gists included` : 'Filter — Enter searches file contents',
+    ariaLabel: 'Filter gists',
+  });
+  const filterRows = () => {
+    const q = input.value.trim().toLowerCase();
+    let shown = 0;
+    for (const li of list.children) shown += !(li.hidden = !li.searchText.includes(q));
+    count.textContent = q ? `${shown} of ${list.children.length} gists` : `${list.children.length} gists`;
+  };
+  input.addEventListener('input', () => {
+    // File names only arrive as rows scroll into view; a filter needs all of them.
+    [...list.children].forEach(fetchFiles);
+    filterRows();
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && input.value.trim()) location.assign(gistree.searchUrl(owner, input.value.trim()));
+  });
+
+  const more = el('div', { className: 'gistree-more' });
+  const index = el('div', { className: 'gistree-index' }, el('div', { className: 'gistree-bar' }, input, count), list, more);
+  snippets[0].before(index);
+  snippets.forEach((s) => (s.hidden = true));
+  filterRows();
+
+  // Search and discover results go on forever; only gist collections are merged into one list.
+  if (/^\/(search|discover)\b/.test(location.pathname)) return;
+  const pager = document.querySelector(SEL.pager);
+  morePages(document, makeRow, list)
+    .then((rest) => {
+      if (pager) pager.hidden = true;
+      if (rest) more.append(el('a', { href: rest, textContent: 'More gists on GitHub →' }));
+    })
+    .catch((e) => console.debug('[gistree]', e))
+    .finally(filterRows);
+}
+
+// ---- Gist pages: file sidebar ----
 
 const HIDDEN_KEY = 'gistree:sidebar-hidden';
 
@@ -112,7 +262,7 @@ function enhanceGist() {
     store(hidden);
   });
 
-  const head = el('div', { className: 'gistree-head' }, el('span', { textContent: `FILES · ${files.length}` }), toggle);
+  const head = el('div', { className: 'gistree-side-head' }, el('span', { textContent: `FILES · ${files.length}` }), toggle);
   const sidebar = el('nav', { className: 'gistree-sidebar', ariaLabel: 'Gist files' }, head, filter, list);
   containers[0].before(layout);
   layout.append(sidebar, el('div', {}, ...containers));
@@ -136,9 +286,11 @@ function boot() {
   enhanceGist();
 }
 
-// Turbo snapshots the DOM without our listeners; put GitHub's layout back so a restored page is rebuilt live.
+// Turbo snapshots the DOM without our listeners; put GitHub's page back so a restored page is rebuilt live.
 function unwrap() {
   for (const layout of document.querySelectorAll('.gistree-layout')) layout.replaceWith(...layout.lastElementChild.children);
+  document.querySelectorAll('.gistree-index').forEach((n) => n.remove());
+  document.querySelectorAll(`${SEL.snippet}, ${SEL.pager}`).forEach((n) => (n.hidden = false));
 }
 
 boot();

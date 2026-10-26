@@ -1,20 +1,122 @@
 /* Colors come from GitHub's Primer variables so light/dark themes follow automatically. */
-.gistree-card {
+.gistree-muted {
+  color: var(--fgColor-muted, #59636e);
+}
+
+/* Gist lists: compact index. */
+.gistree-bar {
   display: flex;
-  gap: 16px;
-  margin: 8px 0;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--fgColor-muted, #59636e);
+}
+
+.gistree-bar input {
+  flex: 1;
+  min-width: 0;
+}
+
+.gistree-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--borderColor-default, #d1d9e0);
+}
+
+.gistree-row {
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--borderColor-muted, #d1d9e0b3);
+}
+
+.gistree-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.gistree-title {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gistree-meta {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--fgColor-muted, #59636e);
+}
+
+.gistree-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.gistree-chips a {
+  padding: 0 8px;
+  line-height: 20px;
+  border: 1px solid var(--borderColor-default, #d1d9e0);
+  border-radius: 10px;
+  color: var(--fgColor-default, #1f2328);
+}
+
+.gistree-chips a:hover {
+  text-decoration: none;
+  background: var(--bgColor-neutral-muted, #818b981f);
+}
+
+.gistree-chips a.gistree-active {
+  font-weight: 600;
+  background: var(--bgColor-accent-muted, #ddf4ff);
+}
+
+.gistree-row details {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.gistree-row summary {
+  width: max-content;
+  cursor: pointer;
+  color: var(--fgColor-muted, #59636e);
+}
+
+.gistree-preview {
+  max-height: 360px;
+  margin-top: 6px;
   padding: 12px;
+  overflow: auto;
+  font-size: 13px;
   border: 1px solid var(--borderColor-default, #d1d9e0);
   border-radius: 6px;
 }
 
-.gistree-files {
-  flex: 0 0 220px;
-  min-width: 0;
+.gistree-preview pre {
   margin: 0;
-  padding: 0 12px 0 0;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.gistree-preview .markdown-body {
+  font-size: 13px;
+}
+
+.gistree-more {
+  margin-top: 12px;
+  text-align: center;
+}
+
+/* Gist page: sticky file sidebar next to the files. */
+.gistree-files {
+  margin: 0;
+  padding: 0;
   list-style: none;
-  border-right: 1px solid var(--borderColor-default, #d1d9e0);
 }
 
 .gistree-files a {
@@ -34,7 +136,6 @@
   background: var(--bgColor-neutral-muted, #818b981f);
 }
 
-.gistree-files a.gistree-active,
 .gistree-files a[aria-current='true'] {
   font-weight: 600;
   background: var(--bgColor-accent-muted, #ddf4ff);
@@ -50,52 +151,6 @@
   color: var(--fgColor-muted, #59636e);
 }
 
-.gistree-preview {
-  position: relative;
-  flex: 1;
-  min-width: 0;
-  max-height: 240px;
-  overflow: hidden;
-  font-size: 13px;
-}
-
-.gistree-preview::after {
-  content: '';
-  position: absolute;
-  inset: auto 0 0;
-  height: 48px;
-  background: linear-gradient(transparent, var(--bgColor-default, #fff));
-}
-
-.gistree-preview pre {
-  margin: 0;
-  font-size: 12px;
-  white-space: pre-wrap;
-}
-
-.gistree-preview .markdown-body {
-  font-size: 13px;
-}
-
-.gistree-preview .markdown-body :is(h1, h2) {
-  font-size: 1.25em;
-  border: 0;
-}
-
-@media (max-width: 767px) {
-  .gistree-card {
-    flex-direction: column;
-  }
-
-  .gistree-files {
-    flex-basis: auto;
-    padding: 0 0 8px;
-    border-right: 0;
-    border-bottom: 1px solid var(--borderColor-default, #d1d9e0);
-  }
-}
-
-/* Gist page: sticky file sidebar next to the files. */
 .gistree-layout {
   display: flex;
   gap: 16px;
@@ -111,14 +166,10 @@
   position: sticky;
   top: 16px;
   flex: 0 0 240px;
+  min-width: 0;
   max-height: calc(100vh - 32px);
   margin-top: 8px;
   overflow: auto;
-}
-
-.gistree-sidebar .gistree-files {
-  padding: 0;
-  border: 0;
 }
 
 .gistree-sidebar input {
@@ -126,7 +177,7 @@
   margin: 4px 0 8px;
 }
 
-.gistree-head {
+.gistree-side-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -139,8 +190,8 @@
   flex-basis: auto;
 }
 
-.gistree-collapsed .gistree-sidebar > :not(.gistree-head),
-.gistree-collapsed .gistree-head span {
+.gistree-collapsed .gistree-sidebar > :not(.gistree-side-head),
+.gistree-collapsed .gistree-side-head span {
   display: none;
 }
 

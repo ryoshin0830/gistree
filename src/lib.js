@@ -20,6 +20,17 @@ const gistree = {
     const tail = ext.length ? ext : chars.slice(chars.length - Math.floor((max - 1) / 2));
     return chars.slice(0, max - 1 - tail.length).join('') + '…' + tail.join('');
   },
+
+  // "/ryoshin0830" -> "ryoshin0830"; site pages like "/discover" are not profiles.
+  profileOwner(pathname) {
+    const m = pathname.match(/^\/([^/]+)\/?$/);
+    return m && !['discover', 'search', 'starred', 'mine'].includes(m[1]) ? m[1] : null;
+  },
+
+  // GitHub's own gist search covers file contents, and the owner's secret gists when signed in.
+  searchUrl(owner, query) {
+    return '/search?q=' + encodeURIComponent(owner ? `user:${owner} ${query}` : query);
+  },
 };
 
 if (typeof module === 'object') module.exports = gistree;
