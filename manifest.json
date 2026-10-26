@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "gistree",
+  "version": "1.0",
+  "description": "Shows every file of a GitHub Gist: a searchable index with previews on gist lists, and a file sidebar on gist pages. No token needed.",
+  "content_scripts": [
+    {
+      "matches": ["https://gist.github.com/*"],
+      "js": ["src/lib.js", "src/content.js"],
+      "css": ["src/gistree.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}
