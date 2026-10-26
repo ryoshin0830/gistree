@@ -46,3 +46,14 @@ test('any README variant beats other markdown and text', () => {
 test('selectors are shared with node', () => {
   assert.equal(typeof require('../src/lib.js').SEL.snippet, 'string');
 });
+
+test('manifest icons exist on disk as PNG', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const root = path.join(__dirname, '..');
+  const { icons } = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
+  assert.deepEqual(Object.keys(icons ?? {}), ['16', '48', '128']);
+  for (const file of Object.values(icons)) {
+    assert.equal(fs.readFileSync(path.join(root, file)).subarray(1, 4).toString(), 'PNG', file);
+  }
+});

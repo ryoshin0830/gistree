@@ -2,12 +2,24 @@
   "manifest_version": 3,
   "name": "gistree",
   "version": "1.0",
-  "description": "Shows every file of a GitHub Gist: a searchable index with previews on gist lists, and a file sidebar on gist pages. No token needed.",
+  "description": "Shows every file of a GitHub Gist: a searchable split-view index on gist lists and a file sidebar on gist pages. No token, no permissions.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
   "content_scripts": [
     {
-      "matches": ["https://gist.github.com/*"],
-      "js": ["src/lib.js", "src/content.js"],
-      "css": ["src/gistree.css"],
+      "matches": [
+        "https://gist.github.com/*"
+      ],
+      "js": [
+        "src/lib.js",
+        "src/content.js"
+      ],
+      "css": [
+        "src/gistree.css"
+      ],
       "run_at": "document_idle"
     }
   ]
