@@ -88,3 +88,64 @@
     border-bottom: 1px solid var(--borderColor-default, #d1d9e0);
   }
 }
+
+/* Gist page: sticky file sidebar next to the files. */
+.gistree-layout {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.gistree-layout > :last-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.gistree-sidebar {
+  position: sticky;
+  top: 16px;
+  flex: 0 0 240px;
+  max-height: calc(100vh - 32px);
+  margin-top: 8px;
+  overflow: auto;
+}
+
+.gistree-sidebar .gistree-files {
+  padding: 0;
+  border: 0;
+}
+
+.gistree-sidebar input {
+  width: 100%;
+  margin: 4px 0 8px;
+}
+
+.gistree-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fgColor-muted, #59636e);
+}
+
+.gistree-collapsed .gistree-sidebar {
+  flex-basis: auto;
+}
+
+.gistree-collapsed .gistree-sidebar > :not(.gistree-head),
+.gistree-collapsed .gistree-head span {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .gistree-layout {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .gistree-sidebar {
+    position: static;
+    max-height: none;
+  }
+}
