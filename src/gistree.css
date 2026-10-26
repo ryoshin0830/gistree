@@ -10,6 +10,7 @@
 
 .gistree-files {
   flex: 0 0 220px;
+  min-width: 0;
   margin: 0;
   padding: 0 12px 0 0;
   list-style: none;
@@ -37,6 +38,11 @@
 .gistree-files a[aria-current='true'] {
   font-weight: 600;
   background: var(--bgColor-accent-muted, #ddf4ff);
+}
+
+.gistree-files span {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .gistree-files svg {

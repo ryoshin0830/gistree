@@ -35,7 +35,7 @@ function preview(file) {
   const md = file.el.querySelector(SEL.markdown);
   if (md) return document.importNode(md, true);
   const lines = [...file.el.querySelectorAll(SEL.codeLine)].slice(0, PREVIEW_LINES).map((td) => td.textContent);
-  return el('pre', { textContent: lines.join('\n') });
+  return lines.length ? el('pre', { textContent: lines.join('\n') }) : null;
 }
 
 async function enhanceSnippet(snippet) {
@@ -55,9 +55,11 @@ async function enhanceSnippet(snippet) {
     if (f === chosen) a.classList.add('gistree-active');
     list.append(el('li', {}, a));
   }
-  const card = el('div', { className: 'gistree-card' }, list, el('div', { className: 'gistree-preview' }, preview(chosen)));
-  body.hidden = true;
-  body.after(card);
+  // No previewable text (images, notebooks…): keep GitHub's own preview below the file list.
+  const shown = preview(chosen);
+  const card = el('div', { className: 'gistree-card' }, list, shown && el('div', { className: 'gistree-preview' }, shown));
+  body.hidden = Boolean(shown);
+  body.before(card);
 }
 
 async function enhanceList() {
@@ -134,6 +136,12 @@ function boot() {
   enhanceGist();
 }
 
+// Turbo snapshots the DOM without our listeners; put GitHub's layout back so a restored page is rebuilt live.
+function unwrap() {
+  for (const layout of document.querySelectorAll('.gistree-layout')) layout.replaceWith(...layout.lastElementChild.children);
+}
+
 boot();
 document.addEventListener('turbo:load', boot);
 document.addEventListener('pjax:end', boot);
+document.addEventListener('turbo:before-cache', unwrap);
