@@ -1,0 +1,40 @@
+# Daily: does gist.github.com still have the markup gistree reads? Opens one issue when it drifts.
+name: selectors
+
+on:
+  schedule:
+    - cron: '17 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - id: check
+        run: |
+          set +e
+          node scripts/check-selectors.js > report.md
+          code=$?
+          cat report.md
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          # 1 = drift, reported below; 2 = could not check (network), which just fails this run.
+          [ "$code" = 0 ] || [ "$code" = 1 ]
+      - if: steps.check.outputs.code == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create selector-drift --color d93f0b --description "gist.github.com markup no longer matches SEL" 2>/dev/null || true
+          if [ -z "$(gh issue list --label selector-drift --state open --json number --jq '.[].number')" ]; then
+            gh issue create --title "gist.github.com markup changed: update SEL in src/lib.js" --label selector-drift --body-file report.md
+          fi
+          exit 1

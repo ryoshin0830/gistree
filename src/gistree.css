@@ -1,0 +1,284 @@
+/* Colors come from GitHub's Primer variables so light/dark themes follow automatically. */
+.gistree-muted {
+  color: var(--fgColor-muted, #59636e);
+}
+
+/* Gist lists: compact index. */
+.gistree-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--fgColor-muted, #59636e);
+}
+
+.gistree-bar input {
+  flex: 1;
+  min-width: 0;
+}
+
+.gistree-split {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.gistree-left {
+  flex: 0 0 42%;
+  min-width: 0;
+}
+
+.gistree-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--borderColor-default, #d1d9e0);
+}
+
+/* The whole row is the click target (HIG: generous hit areas, persistent selection). */
+.gistree-row {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--borderColor-muted, #d1d9e0b3);
+  outline: none;
+}
+
+.gistree-row:hover {
+  background: var(--bgColor-neutral-muted, #818b981f);
+}
+
+.gistree-row[aria-selected='true'] {
+  background: var(--bgColor-accent-muted, #ddf4ff);
+  box-shadow: inset 3px 0 var(--bgColor-accent-emphasis, #0969da);
+}
+
+.gistree-row:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--focus-outlineColor, #0969da);
+}
+
+.gistree-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.gistree-title {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gistree-meta {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--fgColor-muted, #59636e);
+}
+
+.gistree-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.gistree-chips a {
+  padding: 0 8px;
+  line-height: 22px;
+  border: 1px solid var(--borderColor-default, #d1d9e0);
+  border-radius: 11px;
+  color: var(--fgColor-default, #1f2328);
+}
+
+.gistree-chips a:hover {
+  text-decoration: none;
+  background: var(--bgColor-default, #fff);
+}
+
+.gistree-chips a.gistree-active {
+  font-weight: 600;
+}
+
+.gistree-pane {
+  position: sticky;
+  top: 16px;
+  flex: 1;
+  min-width: 0;
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  border: 1px solid var(--borderColor-default, #d1d9e0);
+  border-radius: 6px;
+}
+
+.gistree-pane-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bgColor-muted, #f6f8fa);
+  border-bottom: 1px solid var(--borderColor-default, #d1d9e0);
+}
+
+.gistree-pane-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gistree-tabs {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* 28px tall: HIG's default pointer control size. */
+.gistree-tab {
+  min-height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+  color: var(--fgColor-default, #1f2328);
+  cursor: pointer;
+  background: var(--bgColor-default, #fff);
+  border: 1px solid var(--borderColor-default, #d1d9e0);
+  border-radius: 6px;
+}
+
+.gistree-tab[aria-pressed='true'] {
+  font-weight: 600;
+  background: var(--bgColor-accent-muted, #ddf4ff);
+  border-color: var(--borderColor-accent-emphasis, #0969da);
+}
+
+.gistree-pane-body {
+  padding: 16px;
+  font-size: 14px;
+}
+
+.gistree-pane-body pre {
+  margin: 0;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.gistree-more {
+  margin-top: 12px;
+  text-align: center;
+}
+
+/* No room for a pane: rows open their gist instead. */
+@media (max-width: 1011px) {
+  .gistree-left {
+    flex-basis: 100%;
+  }
+
+  .gistree-pane {
+    display: none;
+  }
+}
+
+/* Gist page: sticky file sidebar next to the files. */
+.gistree-files {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gistree-files a {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 20px;
+  white-space: nowrap;
+  color: var(--fgColor-default, #1f2328);
+}
+
+.gistree-files a:hover {
+  text-decoration: none;
+  background: var(--bgColor-neutral-muted, #818b981f);
+}
+
+.gistree-files a[aria-current='true'] {
+  font-weight: 600;
+  background: var(--bgColor-accent-muted, #ddf4ff);
+}
+
+.gistree-files span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gistree-files svg {
+  flex: none;
+  color: var(--fgColor-muted, #59636e);
+}
+
+.gistree-layout {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.gistree-layout > :last-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.gistree-sidebar {
+  position: sticky;
+  top: 16px;
+  flex: 0 0 240px;
+  min-width: 0;
+  max-height: calc(100vh - 32px);
+  margin-top: 8px;
+  overflow: auto;
+}
+
+.gistree-sidebar input {
+  width: 100%;
+  margin: 4px 0 8px;
+}
+
+.gistree-side-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fgColor-muted, #59636e);
+}
+
+.gistree-collapsed .gistree-sidebar {
+  flex-basis: auto;
+}
+
+.gistree-collapsed .gistree-sidebar > :not(.gistree-side-head),
+.gistree-collapsed .gistree-side-head span {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .gistree-layout {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .gistree-sidebar {
+    position: static;
+    max-height: none;
+  }
+}

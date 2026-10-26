@@ -1,0 +1,41 @@
+# Tests every PR and push to main; each push to main that passes is released as gistree-<version>.zip.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  release:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the patch version counts main's commits
+      - name: Build and release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="$(jq -r .version manifest.json).$(git rev-list --count HEAD)"
+          if git rev-parse -q --verify "refs/tags/v$v" >/dev/null; then echo "v$v is already released"; exit 0; fi
+          mkdir dist
+          jq --arg v "$v" '.version = $v' manifest.json > dist/manifest.json
+          cp -r src icons dist/
+          (cd dist && zip -qr "../gistree-$v.zip" .)
+          gh release create "v$v" "gistree-$v.zip" --target "$GITHUB_SHA" --title "gistree $v" --generate-notes

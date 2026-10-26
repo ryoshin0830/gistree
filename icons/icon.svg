@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- gistree: one gist (top) and its files (bottom). Source for icon-*.png (headless Chrome, then sips). -->
+  <rect width="128" height="128" rx="28" fill="#1f2328"/>
+  <path d="M64 46 V78 M30 78 V62 H98 V78" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="44" y="16" width="40" height="32" rx="8" fill="#ffffff"/>
+  <rect x="14" y="76" width="32" height="34" rx="8" fill="#3fb950"/>
+  <rect x="48" y="76" width="32" height="34" rx="8" fill="#3fb950"/>
+  <rect x="82" y="76" width="32" height="34" rx="8" fill="#3fb950"/>
+</svg>
