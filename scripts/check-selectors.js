@@ -21,13 +21,22 @@ function checkGist(doc) {
   return files.every((f) => f.querySelector(SEL.fileName)) ? [] : [miss('gist page file', 'fileName')];
 }
 
-function checkJson(json, DOMParser) {
-  if (!Array.isArray(json.files) || !json.files.length || typeof json.div !== 'string') return ['gist .json: no "files" array or "div" string'];
-  const div = new DOMParser().parseFromString(json.div, 'text/html');
+// Several gists: every one must pair names with files, but only some need text, since csv, ipynb,
+// svg and image gists render without markdown or code lines.
+function checkJson(jsons, DOMParser) {
   const problems = [];
-  const count = div.querySelectorAll(SEL.file).length;
-  if (count !== json.files.length) problems.push(`gist .json: ${json.files.length} names but ${count} \`${SEL.file}\` (file)`);
-  if (!div.querySelector(`${SEL.markdown}, ${SEL.codeLine}`)) problems.push(miss('gist .json', 'codeLine'));
+  let text = false;
+  for (const json of jsons) {
+    if (!Array.isArray(json.files) || !json.files.length || typeof json.div !== 'string') {
+      problems.push('gist .json: no "files" array or "div" string');
+      continue;
+    }
+    const div = new DOMParser().parseFromString(json.div, 'text/html');
+    const count = div.querySelectorAll(SEL.file).length;
+    if (count !== json.files.length) problems.push(`gist .json: ${json.files.length} names but ${count} \`${SEL.file}\` (file)`);
+    text ||= !!div.querySelector(`${SEL.markdown}, ${SEL.codeLine}`);
+  }
+  if (!text) problems.push(miss('gist .json', 'codeLine'));
   return problems;
 }
 
@@ -42,12 +51,14 @@ async function main() {
 
   const list = await page('https://gist.github.com/discover');
   const problems = checkList(list);
-  const path = [...list.querySelectorAll(SEL.gistLink)].map((a) => a.getAttribute('href')).find((h) => GIST_PATH.test(h));
+  const paths = [...new Set([...list.querySelectorAll(SEL.gistLink)].map((a) => a.getAttribute('href')).filter((h) => GIST_PATH.test(h)))].slice(0, 5);
+  const path = paths[0];
   if (path) {
     problems.push(...checkGist(await page(`https://gist.github.com${path}`)));
-    problems.push(...checkJson(await (await get(`https://gist.github.com${path}.json`)).json(), new JSDOM('').window.DOMParser));
+    const jsons = await Promise.all(paths.map(async (p) => (await get(`https://gist.github.com${p}.json`)).json()));
+    problems.push(...checkJson(jsons, new JSDOM('').window.DOMParser));
   }
-  if (!problems.length) return console.log(`ok: discover and ${path} match SEL`);
+  if (!problems.length) return console.log(`ok: discover, ${path} and ${paths.length} .json match SEL`);
   console.log(`gistree's selectors in \`src/lib.js\` no longer match gist.github.com (checked discover and ${path ?? 'no gist'}):\n`);
   console.log(problems.map((p) => `- ${p}`).join('\n'));
   process.exitCode = 1;
