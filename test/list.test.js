@@ -79,6 +79,8 @@ test('ArrowDown selects next row', async () => {
   assert.equal(rows(w)[1].getAttribute('aria-selected'), 'true');
   assert.equal(rows(w)[0].getAttribute('aria-selected'), null);
   assert.equal(paneText(w), 'print(1)');
+  assert.equal(w.document.activeElement, rows(w)[1]);
+  assert.deepEqual(w.errors, []);
 });
 
 test('Enter on selected row opens the gist', async () => {
